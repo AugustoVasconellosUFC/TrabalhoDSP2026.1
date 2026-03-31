@@ -10,8 +10,12 @@ class Item(BaseModel):
     estoque: int
 
 
+# WIP : banco de dados
+
 app = FastAPI()
 
 @app.get("/")
-def home():
+def home():   # Função de teste
     return{"msg":"Olá, mundo!"}
+
+# WIP : API CRUD
