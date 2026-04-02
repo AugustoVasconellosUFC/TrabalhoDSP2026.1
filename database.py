@@ -1,5 +1,6 @@
 import os
 import pyarrow as pa
+import pyarrow.dataset as ds
 from deltalake import write_deltalake, DeltaTable
 
 class DeltaDB:
@@ -39,3 +40,49 @@ class DeltaDB:
         fim = inicio + page_size
         
         return todos_os_registros[inicio:fim]
+
+    # F3 - CRUD
+
+    def get_by_id(self, item_id: int) -> dict | None:
+        """Busca um registro específico aplicando filtro direto no disco."""
+        if not os.path.exists(self.table_path): return None
+        
+        dt = DeltaTable(self.table_path)
+        
+        #Filtra no disco ANTES de virar tabela PyArrow
+        tabela_filtrada = dt.to_pyarrow_dataset().to_table(filter=ds.field("id") == item_id)
+        registros = tabela_filtrada.to_pylist()
+        
+        return registros[0] if registros else None
+
+    def update(self, item_id: int, updates: dict) -> bool:
+        """Atualiza um registro usando Predicate SQL."""
+        if not os.path.exists(self.table_path): return False
+        
+        # Ignora campos None (para atualizar apenas o que foi enviado)
+        updates_reais = {k: v for k, v in updates.items() if v is not None}
+        if not updates_reais: return True
+        
+        # Formata para o Delta (Strings ganham aspas simples)
+        sql_updates = {}
+        for k, v in updates_reais.items():
+            if isinstance(v, str):
+                sql_updates[k] = f"'{v}'"
+            else:
+                sql_updates[k] = str(v)
+
+        dt = DeltaTable(self.table_path)
+        # O predicate diz: "Vá no disco e altere SOMENTE onde id = item_id"
+        metricas = dt.update(predicate=f"id = {item_id}", updates=sql_updates)
+        
+        return metricas.get("num_updated_rows", 0) > 0
+
+    def delete(self, item_id: int) -> bool:
+        """Remove um registro usando Predicate SQL."""
+        if not os.path.exists(self.table_path): return False
+        
+        dt = DeltaTable(self.table_path)
+        # O predicate diz: "Vá no disco e apague SOMENTE onde id = item_id"
+        metricas = dt.delete(predicate=f"id = {item_id}")
+        
+        return metricas.get("num_deleted_rows", 0) > 0

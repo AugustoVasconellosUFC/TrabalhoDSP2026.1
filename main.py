@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 from pydantic import BaseModel, Field
 
 # WIP: importar deltalake e outras bibliotecas necessárias para o banco de dados
@@ -11,6 +12,13 @@ class Item(BaseModel):
     preco: float = Field(..., gt=0, description="Preço unitário", example=250.50)
     vendedor: str = Field(..., description="Nome da loja", example="Loja de Informática")   # Em futuras implementações pode ser mudado para int
     estoque: int = Field(..., ge=0, description="Quantidade em estoque", example=15)
+    
+class ItemUpdate(BaseModel):
+    """Modelo para atualização: todos os campos são opcionais (None)."""
+    nome: str | None = Field(None, min_length=2, description="Nome do produto")
+    preco: float | None = Field(None, gt=0, description="Preço unitário")
+    vendedor: str | None = Field(None, description="Nome da loja")
+    estoque: int | None = Field(None, ge=0, description="Quantidade em estoque")
 
 # WIP : banco de dados deltalake
 db = DeltaDB()
@@ -59,6 +67,31 @@ def listar_itens(
     }
 
 # F3	CRUD completo seguindo as convenções REST (GET, POST, PUT/PATCH, DELETE).
+
+@app.get("/itens/{item_id}", status_code=HTTPStatus.OK)
+def buscar_item(item_id: int):
+    """F3 - Retorna um registro específico pelo ID."""
+    item = db.get_by_id(item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item não encontrado")
+    return item
+
+@app.put("/itens/{item_id}", status_code=HTTPStatus.OK)
+def atualizar_item(item_id: int, item_atualizado: ItemUpdate):
+    """F3 - Atualiza campos específicos de um registro existente."""
+    sucesso = db.update(item_id, item_atualizado.model_dump())
+    if not sucesso:
+        raise HTTPException(status_code=404, detail="Item não encontrado ou ID inválido")
+    return {"msg": f"Item {item_id} atualizado com sucesso!"}
+
+@app.delete("/itens/{item_id}", status_code=HTTPStatus.OK)
+def deletar_item(item_id: int):
+    """F3 - Remove um registro do banco de dados."""
+    sucesso = db.delete(item_id)
+    if not sucesso:
+        raise HTTPException(status_code=404, detail="Item não encontrado ou ID inválido")
+    return {"msg": f"Item {item_id} deletado com sucesso!"}
+
 # F4	Contagem: retorna o número atual de registros da entidade.
 # F5	Exportação CSV via streaming
 # F6	Exportação CSV compactada via streaming
