@@ -1,8 +1,7 @@
 from http import HTTPStatus
-from fastapi import FastAPI, Query
 from fastapi import FastAPI, Query, HTTPException
 from pydantic import BaseModel, Field
-
+from fastapi.responses import StreamingResponse
 # WIP: importar deltalake e outras bibliotecas necessárias para o banco de dados
 from database import DeltaDB
 
@@ -68,6 +67,11 @@ def listar_itens(
 
 # F3	CRUD completo seguindo as convenções REST (GET, POST, PUT/PATCH, DELETE).
 
+@app.get("/itens/contagem", status_code=HTTPStatus.OK)
+def obter_total_itens():    
+    total = db.count()
+    return {"total_itens": total}
+
 @app.get("/itens/{item_id}", status_code=HTTPStatus.OK)
 def buscar_item(item_id: int):
     """F3 - Retorna um registro específico pelo ID."""
@@ -93,6 +97,21 @@ def deletar_item(item_id: int):
     return {"msg": f"Item {item_id} deletado com sucesso!"}
 
 # F4	Contagem: retorna o número atual de registros da entidade.
+
+@app.get("/itens/contagem", status_code=HTTPStatus.OK)
+def obter_total_itens():    
+    total = db.count()
+    return {"total_itens": total}
+
 # F5	Exportação CSV via streaming
+
+@app.get("/itens/exportar/csv")
+def exportar_csv():
+    return StreamingResponse(
+        db.generate_csv_stream(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=itens_exportados.csv"}
+    )
+
 # F6	Exportação CSV compactada via streaming
 # F7	Hash de dado

@@ -2,6 +2,8 @@ import os
 import pyarrow as pa
 import pyarrow.dataset as ds
 from deltalake import write_deltalake, DeltaTable
+import csv 
+import io 
 
 class DeltaDB:
     def __init__(self, table_path: str = "dados/itens_delta"):
@@ -86,3 +88,38 @@ class DeltaDB:
         metricas = dt.delete(predicate=f"id = {item_id}")
         
         return metricas.get("num_deleted_rows", 0) > 0
+    
+    def count(self):
+        if not os.path.exists(self.table_path): return False
+        
+        dt = DeltaTable(self.table_path)
+        
+        return dt.to_pyarrow_dataset().count_rows()
+    
+    def generate_csv_stream(self):
+        if not os.path.exists(self.table_path):
+        # Em vez de apenas 'return', podemos emitir um log ou simplesmente
+        # deixar o gerador terminar sem produzir chunks.
+            return 
+
+        dt = DeltaTable(self.table_path)
+        
+        # Se a tabela está vazia, o to_batches() pode não ter nada para iterar
+        if dt.to_pyarrow_dataset().count_rows() == 0:
+            return
+
+        # O uso do yield abaixo transforma esta função oficialmente em um gerador
+        batches = dt.to_pyarrow_dataset().to_batches()
+
+        primeiro_batch = True
+        for batch in batches:
+            output = io.StringIO()
+            writer = csv.DictWriter(output, fieldnames=batch.schema.names)
+            
+            if primeiro_batch:
+                writer.writeheader()
+                primeiro_batch = False
+            
+            writer.writerows(batch.to_pylist())
+            yield output.getvalue()
+            output.close()
