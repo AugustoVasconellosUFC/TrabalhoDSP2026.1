@@ -127,20 +127,17 @@ def exportar_csv_zip():
 
 # F7	Hash de dado
 
-@app.get("itens/MD5/{item_id}")
-def retornar_hash_MD5(item_id: int):
-    item = db.get_by_id(item_id)
-    item_hash = hashlib.md5(item)
-    return item_hash.hexdigest()
+@app.get("/hash/MD5/{value}")
+def retornar_hash_MD5(value: str):
+    hashed_value = hashlib.md5(value.encode('utf-8'))
+    return hashed_value.hexdigest()
 
-@app.get("itens/SHA-1/{item_id}")
-def retornar_hash_SHA1(item_id: int):
-    item = db.get_by_id(item_id)
-    item_hash = hashlib.sha1(item)
-    return item_hash.hexdigest()
+@app.get("/hash/SHA-1/{value}")
+def retornar_hash_SHA1(value: str):
+    hashed_value = hashlib.sha1(value.encode('utf-8'))
+    return hashed_value.hexdigest()
 
-@app.get("itens/SHA-256/{item_id}")
-def retornar_hash_SHA256(item_id: int):
-    item = db.get_by_id(item_id)
-    item_hash = hashlib.sha256(item)
-    return item_hash.hexdigest()
+@app.get("/hash/SHA-256/{value}")
+def retornar_hash_SHA256(value: str):
+    hashed_value = hashlib.sha256(value.encode('utf-8'))
+    return hashed_value.hexdigest()
