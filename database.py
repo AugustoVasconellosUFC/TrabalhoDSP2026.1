@@ -11,6 +11,13 @@ class DeltaDB:
         # Garante que a pasta base exista
         os.makedirs("dados", exist_ok=True)
 
+    def insert(self, item_dict: dict) -> None:
+        # Tudo abaixo precisa estar alinhado para o Python entender que pertence ao insert
+        dados_colunares = {key: [value] for key, value in item_dict.items()}
+        tabela_arrow = pa.table(dados_colunares)
+        # O segredo é este mode="append"
+        write_deltalake(self.table_path, tabela_arrow, mode="append")
+
     def list_paginated(self, page: int, page_size: int) -> list[dict]:
         """F2: Recupera uma página específica lendo apenas os lotes (batches) necessários sob demanda."""
         if not os.path.exists(self.table_path):
