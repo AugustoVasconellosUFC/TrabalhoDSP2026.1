@@ -2,6 +2,8 @@ from http import HTTPStatus
 from fastapi import FastAPI, Query, HTTPException
 from pydantic import BaseModel, Field
 from fastapi.responses import StreamingResponse
+from stream_zip import stream_zip
+import hashlib
 # WIP: importar deltalake e outras bibliotecas necessárias para o banco de dados
 from database import DeltaDB
 
@@ -113,5 +115,32 @@ def exportar_csv():
         headers={"Content-Disposition": "attachment; filename=itens_exportados.csv"}
     )
 
-# F6	Exportação CSV compactada via streaming
+# F6	Exportação CSV compactada via zip
+
+@app.get("/itens/exportar/csv-zip")
+def exportar_csv_zip():
+    return StreamingResponse(
+        stream_zip(db.generate_csv_stream()),
+        media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=itens_exportados.zip"}
+    )
+
 # F7	Hash de dado
+
+@app.get("itens/MD5/{item_id}")
+def retornar_hash_MD5(item_id: int):
+    item = db.get_by_id(item_id)
+    item_hash = hashlib.md5(item)
+    return item_hash.hexdigest()
+
+@app.get("itens/SHA-1/{item_id}")
+def retornar_hash_SHA1(item_id: int):
+    item = db.get_by_id(item_id)
+    item_hash = hashlib.sha1(item)
+    return item_hash.hexdigest()
+
+@app.get("itens/SHA-256/{item_id}")
+def retornar_hash_SHA256(item_id: int):
+    item = db.get_by_id(item_id)
+    item_hash = hashlib.sha256(item)
+    return item_hash.hexdigest()
