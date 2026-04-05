@@ -2,7 +2,9 @@ from http import HTTPStatus
 from fastapi import FastAPI, Query, HTTPException
 from pydantic import BaseModel, Field
 from fastapi.responses import StreamingResponse
-from stream_zip import stream_zip
+from stream_zip import ZIP_32, stream_zip
+from stat import S_IFREG
+from datetime import datetime
 import hashlib
 # WIP: importar deltalake e outras bibliotecas necessárias para o banco de dados
 from database import DeltaDB
@@ -119,11 +121,24 @@ def exportar_csv():
 
 @app.get("/itens/exportar/csv-zip")
 def exportar_csv_zip():
+    def arquivos_para_zip():
+        csv_bytes_stream = (linha.encode('utf-8') for linha in db.generate_csv_stream())
+        yield (
+            "data.csv",
+            datetime.now(),
+            S_IFREG | 0o600,
+            ZIP_32,
+            csv_bytes_stream 
+        )
+
+    csv_comprimido = stream_zip(arquivos_para_zip())
+
     return StreamingResponse(
-        stream_zip(db.generate_csv_stream()),
+        csv_comprimido,
         media_type="application/zip",
         headers={"Content-Disposition": "attachment; filename=itens_exportados.zip"}
     )
+
 
 # F7	Hash de dado
 

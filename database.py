@@ -4,6 +4,7 @@ import pyarrow.dataset as ds
 from deltalake import write_deltalake, DeltaTable
 import csv 
 import io 
+import zipfile
 
 class DeltaDB:
     def __init__(self, table_path: str = "dados/itens_delta"):
