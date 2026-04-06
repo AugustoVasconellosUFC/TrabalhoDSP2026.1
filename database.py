@@ -2,8 +2,8 @@ import os
 import pyarrow as pa
 import pyarrow.dataset as ds
 from deltalake import write_deltalake, DeltaTable
-import csv 
-import io 
+import csv
+import io
 import zipfile
 
 class DeltaDB:
@@ -132,7 +132,7 @@ class DeltaDB:
         if not os.path.exists(self.table_path):
         # Em vez de apenas 'return', podemos emitir um log ou simplesmente
         # deixar o gerador terminar sem produzir chunks.
-            return 
+            return
 
         dt = DeltaTable(self.table_path)
         
@@ -155,3 +155,10 @@ class DeltaDB:
             writer.writerows(batch.to_pylist())
             yield output.getvalue()
             output.close()
+
+        def vacuum(self):
+            """Remove arquivos de dados antigos e versões obsoletas do log."""
+            from deltalake import DeltaTable
+            dt = DeltaTable(self.path)
+            # Remove arquivos com mais de 168 horas (7 dias) por padrão
+            dt.vacuum(retention_hours=168, enforce_retention_duration=False)
