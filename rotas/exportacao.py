@@ -18,14 +18,19 @@ def exportar_csv():
 
 @router.get("/csv-zip")
 def exportar_csv_zip():
+    # Transformar dados em str do stream de CSV para dados em bytes
+    def csv_bytes_stream():
+        for linha in db.generate_csv_stream():
+            yield linha.encode('utf-8') 
+
+    # Estabelecer parâmetros para função stream_zip
     def arquivos_para_zip():
-        csv_bytes_stream = (linha.encode('utf-8') for linha in db.generate_csv_stream())
         yield (
-            "data.csv",
-            datetime.now(),
-            S_IFREG | 0o600,
-            ZIP_32,
-            csv_bytes_stream 
+            "data.csv",                 # Nome do arquivo CSV dentro da pasta zip
+            datetime.now(),             # Data de modificação do arquivo zipado
+            S_IFREG | 0o600,            # Modo de compressão zip
+            ZIP_32,                     # Tipo de compressão zip
+            csv_bytes_stream()          # Stream de dados para o arquivo CSV zipado
         )
 
     csv_comprimido = stream_zip(arquivos_para_zip())
