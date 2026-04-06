@@ -13,10 +13,28 @@ class DeltaDB:
         os.makedirs("dados", exist_ok=True)
 
     def insert(self, item_dict: dict) -> None:
-        # Tudo abaixo precisa estar alinhado para o Python entender que pertence ao insert
+        # Caminho para o ficheiro de controlo de IDs
+        seq_file = "dados/sequence.seq"
+        current_id = 1
+
+        # Lê o ID atual (se o ficheiro existir)
+        if os.path.exists(seq_file):
+            with open(seq_file, "r") as f:
+                conteudo = f.read().strip()
+                if conteudo.isdigit():
+                    current_id = int(conteudo) + 1
+
+        # Atualiza o ficheiro com o novo ID
+        with open(seq_file, "w") as f:
+            f.write(str(current_id))
+
+        # Injeta o ID gerado automaticamente no dicionário (chave 'id')
+        item_dict["id"] = current_id
+
+        # Grava no Delta Lake
         dados_colunares = {key: [value] for key, value in item_dict.items()}
         tabela_arrow = pa.table(dados_colunares)
-        # O segredo é este mode="append"
+        
         write_deltalake(self.table_path, tabela_arrow, mode="append")
 
     def list_paginated(self, page: int, page_size: int) -> list[dict]:
@@ -35,7 +53,7 @@ class DeltaDB:
         for batch in dataset.to_batches():
             # Condição de parada: se a página já está cheia, interrompemos a leitura do disco
             if len(registros_retorno) >= page_size:
-                break 
+                break
 
             # Se o lote inteiro está antes do nosso ponto de início (offset), apenas contabilizamos e pulamos
             if linhas_passadas + batch.num_rows <= inicio:

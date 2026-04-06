@@ -8,5 +8,8 @@ dependencies = [
     "uvicorn>=0.29.0",
     "pydantic>=2.6.0",
     "deltalake>=0.16.0",
-    "pyarrow>=15.0.0"
+    "pyarrow>=15.0.0",
+    "stream-zip>=0.0.84",
+    "httpx>=0.28.1",
+    "faker>=40.12.0",
 ]
