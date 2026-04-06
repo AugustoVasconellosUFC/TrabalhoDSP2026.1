@@ -1,0 +1,3 @@
+Augusto Vasconcellos: 
+- Exportação de CSV comprimido
+- Implementação de hashes
