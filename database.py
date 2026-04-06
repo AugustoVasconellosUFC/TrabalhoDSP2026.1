@@ -156,9 +156,9 @@ class DeltaDB:
             yield output.getvalue()
             output.close()
 
-        def vacuum(self):
-            """Remove arquivos de dados antigos e versões obsoletas do log."""
-            from deltalake import DeltaTable
-            dt = DeltaTable(self.path)
-            # Remove arquivos com mais de 168 horas (7 dias) por padrão
-            dt.vacuum(retention_hours=168, enforce_retention_duration=False)
+    def vacuum(self):
+        """Remove arquivos de dados antigos e versões obsoletas do log."""
+        from deltalake import DeltaTable
+        dt = DeltaTable(self.path)
+        # Remove arquivos com mais de 168 horas (7 dias) por padrão
+        dt.vacuum(retention_hours=168, enforce_retention_duration=False)
